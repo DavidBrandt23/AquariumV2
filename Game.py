@@ -218,6 +218,14 @@ class Fish(GameEntity):
         return 100,100
     def onUpdate(self):
         fishSize=self.getSize()
+        dontTurn=False
+        if (self._targetFood!=None):
+            foodX=self._targetFood.transform.getPos().x
+            if (foodX > self.transform.getPos().x) & (foodX <= self.transform.getPos().x + fishSize[0]):
+                dontTurn=True
+        if not dontTurn:
+            self._faceVelocity()
+            
         if (self._curBehavior == None) or (self._curBehavior.isDone()):
             if self._targetFood != None:
                 self._targetFood.eat()
@@ -238,13 +246,6 @@ class Fish(GameEntity):
         self._curBehavior.onUpdate()
         newVel=self._curBehavior.getVelocity()
         
-        dontTurn=False
-        if (self._targetFood!=None):
-            foodX=self._targetFood.transform.getPos().x
-            if (foodX > self.transform.getPos().x) & (foodX <= self.transform.getPos().x + fishSize[0]):
-                dontTurn=True
-        if not dontTurn:
-            self._faceVelocity()
         self.transform.setVelocity(newVel)
 
         self._bubbleMaker.onUpdate()
@@ -416,14 +417,17 @@ class Aquarium(Game):
         self.addToScene(food)
         splash = loadSound("splash.wav")
         pygame.mixer.Sound.play(splash)
-    def _onPreDraw(self):
-        Game._onPreDraw(self)
+    def _drawMenuBG(self):
         borderColor=(20,20,20)
         colorToUse = (150,150,150)
         rect=GameRect(self.aquariumSize[0],0,200,self._windowHeight)
         pygame.draw.rect(self._display_surf,borderColor,[rect.x,rect.y,rect.w,rect.h])
         bW=4
         pygame.draw.rect(self._display_surf,colorToUse,[rect.x+bW,rect.y+bW,rect.w-2*bW,rect.h-2*bW])
+    def _onPreDraw(self):
+        Game._onPreDraw(self)
+        self._drawMenuBG()
+
         
 if __name__ == "__main__" :
     game = Aquarium()
