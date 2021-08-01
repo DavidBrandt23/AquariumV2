@@ -10,6 +10,9 @@ def getRestrictedPos(fieldW,fieldH):
 def loadImage(filePath):
     return pygame.image.load("assets/"+filePath).convert_alpha()
 
+def loadSound(filePath):
+    return pygame.mixer.Sound("assets/"+filePath)
+
 def getRandomPoint(maxX,maxY):
     x=random.randrange(0,maxX)
     y=random.randrange(0,maxY)
@@ -115,6 +118,7 @@ class Visual:
     def __init__(self):
         self._surface = None
         self._xFlip = False
+        self._yFlip = False
     def getSurface(self):
         return self._surface
     def setBaseSurface(self,filePath):
@@ -123,6 +127,10 @@ class Visual:
         if self._xFlip != flip:
             self._xFlip = flip
             self._surface=pygame.transform.flip(self._surface, True, False)
+    def setYFlip(self,flip):
+        if self._yFlip != flip:
+            self._yFlip = flip
+            self._surface=pygame.transform.flip(self._surface, False, True)
     
 class Transform:
     def __init__(self):
@@ -174,7 +182,7 @@ class BubbleMaker:
         self._time+=1
         if self._time>self._period:
             self._time=0
-            bubble = Bubble()
+            bubble = Bubble(self._game)
             bubble.transform.setPos(self._bubbleSrcFunc())
             self._game.addToScene(bubble)
             
@@ -243,12 +251,14 @@ class Fish(GameEntity):
         GameEntity.onUpdate(self)
         
 class Bubble(GameEntity):
-    def __init__(self):
-        GameEntity.__init__(self)
+    def __init__(self,game):
+        GameEntity.__init__(self,game)
         self.setup("bubble.png")
     def onUpdate(self):
         GameEntity.onUpdate(self)
         self.transform.setVelocityXY(0,-1)
+        if self.transform.getPos().y<-20:
+            self._game.removeFromScene(self)
 
 class Food(GameEntity):
     def __init__(self,game):
@@ -257,6 +267,10 @@ class Food(GameEntity):
         self.isFood=True
         self.transform.setVelocityXY(0,0.4)
         self._isDead=False
+        if random.randrange(0,2)==1:
+            self.visual.setXFlip(True)
+        if random.randrange(0,2)==1:
+            self.visual.setYFlip(True)
     def onUpdate(self):
         if self.transform.getPos().y>380:
             self.transform.setVelocityXY(0,0)
@@ -297,13 +311,13 @@ class Button(GameEntity):
         
 class Game:
     def __init__(self):
+        pygame.init()
         self._running = True
         self._display_surf = None
         self._windowSize = self._windowWidth, self._windowHeight = 840, 400
         self._entityList=[]
         self._pyGameClock = pygame.time.Clock()
     def setup(self,gameTitle,iconFile):
-        pygame.init()
         self._display_surf = pygame.display.set_mode(self._windowSize, pygame.HWSURFACE | pygame.DOUBLEBUF)
         pygame.display.set_caption(gameTitle)
         icon = loadImage(iconFile)
@@ -378,6 +392,8 @@ class Aquarium(Game):
         self._addButton(GameRect(640,0,200,100),"Add Fish",self.createFish)
         self._addButton(GameRect(640,95,200,100),"Feed Fish",self.createFood)
         
+        gurgleSound = loadSound("aquarium_gurgle.wav")
+        pygame.mixer.Sound.play(gurgleSound,-1)        
     def _addButton(self,rect,text,callback):
         button1=Button()
         button1.setup(rect,text,callback)
@@ -398,6 +414,8 @@ class Aquarium(Game):
         food = Food(self)
         food.transform.setPosXY(random.randrange(0,540),0)
         self.addToScene(food)
+        splash = loadSound("splash.wav")
+        pygame.mixer.Sound.play(splash)
     def _onPreDraw(self):
         Game._onPreDraw(self)
         borderColor=(20,20,20)
